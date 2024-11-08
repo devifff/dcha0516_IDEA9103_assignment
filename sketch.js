@@ -8,11 +8,21 @@ let riverCircles = [];
 //empty variable for the song
 let song;
 
-//added variable for the button
-let playButton;
+
+let buttonRadius = 30; // Radius for both buttons
+let playButtonX, playButtonY; // Position for play button
+let pauseButtonX, pauseButtonY; // Position for pause button
+let showPlayButton = true; // To toggle between play and pause buttons
+
+//needed to hardcode the value here to make sure the colour remains the same when the animation begins
+//as this variable can change the colour palette of the whole artwork
+let hueValue = 0;
+
+//array for cherry blossom
+let petals = [];
 
 function preload() {
-  song = loadSound('assets/RUDE - Eternal Youth.mp3');//License: Creative Commons License
+  song = loadSound('assets/RUDE - Eternal Youth.mp3');//LICENSE: Creative Commons License
 }
 
 function setup() {
@@ -20,18 +30,17 @@ function setup() {
   angleMode(DEGREES);
   noLoop();// Prevent continuous looping
 
-  //made the playmusic button 
-  playButton = createButton('Play Music');
-  playButton.position(10, 10);
-  playButton.mousePressed(() => {
-    if (song.isPlaying()) {
-      song.pause();
-      noLoop();
-    } else {
-      song.loop();
-      loop();
-    }
-  });
+  /*have used colormode()in python before and then saw a video by TheBuffED src:-  https://www.youtube.com/watch?v=myWZUHvU6bg
+  and one by Courtney Morgan src:-  https://www.youtube.com/watch?v=lt1lDp2aFLQ
+  to understand how this would work in JavaScript
+  */
+  colorMode(HSB, 360, 100, 100);//values followed by HSB stands for hue, saturation and brighntess
+
+  //pos for button
+  playButtonX = 50;
+  playButtonY = 50;
+  pauseButtonX = 50;
+  pauseButtonY = 50;
 
   // Initialize circles for the river
   for (let j = 0; j < 60; j++) { // Loop through 6 rows of circles
@@ -48,17 +57,30 @@ function setup() {
       let y = baseY + yOffset + rowOffset + downwardSlope; // Combine all for a flowing shape
 
       let circleSize = random(20, 70);
-      let blueShade = color(random(0, 100), random(100, 200), random(200, 255));
+      let blueShade = color(random(180, 240), 100, 100); // MODIFY COLOR TO USE HSB VALUES
       riverCircles.push(new Circle(x, y, circleSize, blueShade));
     }
+  }
+
+  /* this loop creates the falling cherry blossom leaves and it was important to keep it in setup in order to make this work
+  as if this was outside this function, the falling leaves would not work
+  */
+  for (let i = 0; i < 200; i++) {
+    petals.push(new Petal());
   }
 }
 
 function draw() {
+  //the huevalue changes gradually when music plays
+  if (song.isPlaying()) {
+    hueValue = (hueValue + 0.5) % 360;
+  }
+
   // Draw the Sky element
   drawGradientSky();
   drawCelestialBodies();
   drawStars();
+
   // Draw the first Grass element
   push();
   translate(width / 5.5, height / 1.8);// Shift the origin from the default (0,0) to the specified position
@@ -84,7 +106,7 @@ function draw() {
     }
 
     // Draw the circle
-    fill(circle.color);
+    fill((hueValue + hue(circle.color)) % 360, saturation(circle.color), brightness(circle.color)); // USE UPDATED HUE VALUE
     stroke(255);
     ellipse(circle.x, circle.y, circle.size, circle.size);
 
@@ -98,6 +120,49 @@ function draw() {
 
   // Draw the tree
   drawTree(width / 1.6, height * 0.7, -90, 9);
+
+  // this is to get the falling petals
+  for (let i = 0; i < petals.length; i++) {
+    let petal = petals[i];
+
+    //switch case to get the pos of petals
+    if (song.isPlaying()) {
+      petal.y += petal.speed;
+      petal.angle += petal.rotationSpeed;
+      if (petal.y > height) {
+        petal.y = random(-200, 0);
+        petal.x = random(width);
+      }
+    }
+
+    //drawing the petal here
+    push();
+    translate(petal.x, petal.y);
+    rotate(petal.angle);
+    fill(330, 50, 100);
+    noStroke();
+    ellipse(0, 0, petal.size * 1.2, petal.size);
+    pop();
+  }
+
+
+  drawPlayPauseButton();
+}
+
+function mousePressed() {
+  //to check the location of mouse
+  let mousLoc = dist(mouseX, mouseY, playButtonX, playButtonY);
+  if (mousLoc < buttonRadius) {
+    if (song.isPlaying()) {
+      song.pause();
+      noLoop();
+      showPlayButton = true;
+    } else {
+      song.loop();
+      loop();
+      showPlayButton = false;
+    }
+  }
 }
 
 // Create a function to draw the Grass element using cylinders
@@ -121,7 +186,7 @@ function drawCylinder(x, y, topHeight) {
   translate(x, y);// Place the cylinder at the specified origin (x,y)
 
   // Draw the side face of the cylinder
-  fill(random(50, 255), 196, 82);
+  fill((hueValue + 100) % 360, 80, 60);
   strokeWeight(1);
   stroke(255);
 
@@ -135,7 +200,7 @@ function drawCylinder(x, y, topHeight) {
   vertex(-cylinderRadius, -topHeight);
   endShape(CLOSE);
   // Draw the top face of the cylinder as an ellipse at the new top height
-  fill(random(32, 100), 152, 48);
+  fill((hueValue + 120) % 360, 90, 70);
   ellipse(0, -topHeight, cylinderRadius * 2, cylinderRadius * 0.8);
   pop();
 }
@@ -152,6 +217,18 @@ class Circle {
     this.vx = random(-1, 1);//controlling the movement by assigning a value for horizontal movement
     this.vy = random(-1, 1);//controlling the movement by letting it move vertically or up and down
   }//got rid of the old code which had display and switch case as I couldn't make it work and failed to get the logic
+}
+
+//petal class which basically is drawing the petals
+class Petal {
+  constructor() {
+    this.x = random(width);
+    this.y = random(-200, 0);
+    this.size = random(5, 15);
+    this.speed = random(1, 3);
+    this.angle = random(360);
+    this.rotationSpeed = random(-2, 2);
+  }
 }
 
 // Draw a spiral inside the circle
@@ -182,9 +259,10 @@ function drawInnerCircles(circle) {
     let innerSize = random(5, circle.size / 3);
     let innerX = circle.x + random(-circle.size / 3, circle.size / 3);
     let innerY = circle.y + random(-circle.size / 3, circle.size / 3);
-    let innerColor = color(255, random(100, 200));
+    let innerColor = color((hueValue + 300) % 360, 50, 100);
 
     fill(innerColor);
+    noStroke();
     ellipse(innerX, innerY, innerSize, innerSize);
   }
 }
@@ -201,43 +279,26 @@ function drawTree(x, y, angle, number) {
     let x2 = x + cos(currentAngle) * length;
     let y2 = y + sin(currentAngle) * length;
 
-    stroke(101, 67, 33);
+    stroke(30, 100, 30);
+    strokeWeight(3); //thickness of tree
     line(x, y, x2, y2);
 
-    drawTreeCircles(x2, y2, number);
+
+    //drawing them on tree
+    fill(330, 50, 100, 80);
+    noStroke();
+    ellipse(x2, y2, random(5, 15), random(5, 15));
+
 
     drawTree(x2, y2, currentAngle - random(15, 30), number - 1);
     drawTree(x2, y2, currentAngle + random(15, 30), number - 1);
   }
 }
 
-function drawTreeCircles(x, y, number) {
-  noFill();
-  for (let i = 0; i < number * 1; i++) {
-    stroke(random(100, 255), random(100, 255), random(100, 255), 150);
-    ellipse(x, y, i * 10, i * 10);
-  }
-
-  for (let i = 0; i < number * 2; i++) {
-    let angle = random(360);
-    let radius = random(number * 5, number * 10);
-    let xOffset = cos(angle) * radius;
-    let yOffset = sin(angle) * radius;
-
-    fill(random(100, 255), random(100, 255), random(100, 255), 200);
-    noStroke();
-    circle(x + xOffset, y + yOffset, 5);
-  }
-}
-
 function drawGradientSky() {
   for (let y = 0; y <= height; y++) {
     let gradient = map(y, 0, height, 0, 1);
-    let skycolor = lerpColor(color(25, 10, 100), color(50, 50, 50), gradient);/* a funtion that helps
-    interpolates between these two colours
-    this lerp function and how to make gradient was adapted from by Patt Vira
-    https://www.youtube.com/watch?v=lPgscmgxcH0
-    */
+    let skycolor = lerpColor(color((hueValue + 200) % 360, 100, 20), color((hueValue + 220) % 360, 100, 50), gradient);
     stroke(skycolor);
     line(0, y, width, y);
   }
@@ -245,20 +306,20 @@ function drawGradientSky() {
 
 function drawCelestialBodies() {
   noStroke();
-  let numBodies = 12;
+  let numBodies = 3;
 
   for (let i = 0; i < numBodies; i++) {//loop to create the big yellow circles aka the celestial bodies
     let x = random(width);
     let y = random(height / 4);//this makes sure that they always remain in the upper half
-    let maxRadius = random(40, 30);
-    let innerCircles = 7;
+    let maxRadius = random(50, 80);
+    let innerCircles = 5;
 
     push();
     translate(x, y);
 
     for (let j = 0; j < innerCircles; j++) {//this loop draws the inner circles
       let radius = map(j, 0, innerCircles, maxRadius, 0);
-      fill(255, 255, 50, map(j, 0, innerCircles, 100, 0));
+      fill((hueValue + 60) % 360, 80, 100, map(j, 0, innerCircles, 100, 0));
       ellipse(0, 0, radius * 2, radius * 2);
     }
 
@@ -268,13 +329,38 @@ function drawCelestialBodies() {
 
 function drawStars() {
   noStroke();
-  fill(255, 255, 200);
+  fill(60, 100, 100);
   let numStars = 150;
   for (let i = 0; i < numStars; i++) {
     let xPos = random(width);
     let yPos = random(height);
-    let w = random(1, 5);
-    let h = w + random(-1, 1);
-    ellipse(xPos, yPos, w, h);
+    let w = random(1, 3);
+    ellipse(xPos, yPos, w, w);
   }
+}
+
+//function to create the play-pause button
+function drawPlayPauseButton() {
+  push();
+  translate(playButtonX, playButtonY);
+  if (showPlayButton) {
+    fill(120, 100, 100); //green for play
+  } else {
+    fill(0, 100, 100); //red for pause
+  }
+  noStroke();
+  ellipse(0, 0, buttonRadius * 2);
+
+  //icon for play pause
+  fill(255);
+  if (showPlayButton) {
+    //play icon
+    triangle(-buttonRadius / 2, -buttonRadius / 2, -buttonRadius / 2, buttonRadius / 2, buttonRadius / 2, 0);
+  } else {
+    //pause icon
+    rectMode(CENTER);
+    rect(-buttonRadius / 4, 0, buttonRadius / 4, buttonRadius);
+    rect(buttonRadius / 4, 0, buttonRadius / 4, buttonRadius);
+  }
+  pop();
 }
