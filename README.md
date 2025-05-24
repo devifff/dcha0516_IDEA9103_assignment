@@ -1,6 +1,13 @@
 # IDEA9103_Major_Assignment_dcha0516
 This repo is for my final assignment of IDEA9103
 
+# EDIT ON HOW TO INTERACT
+1. install p5.vscode extension by the same name in vscode
+2. download the full zip file from this git repo
+3. go live via the html page
+4. you will see a neon green button on top left hand, click on it and the magic begins. you can also click on it anytime to pause
+5. see the colours artwork change as the song progresses and relax.
+
 # COMMIT 1
 
 The first commit modifies the group code to make the circles in the figure move around when the song "RUDE-Eternal Youth" plays which is a Free to use, Royalty free music which has a *Creative Commons License* and allows to be used for a Non Commercial use
