@@ -7,6 +7,7 @@ This repo is for my final assignment of IDEA9103
 3. go live via the html page
 4. you will see a neon green button on top left hand, click on it and the magic begins. you can also click on it anytime to pause
 5. see the colours artwork change as the song progresses and relax.
+6. **IMPORTANT -** This was designed to run in partial window/screen so going fullscreen will make the artwork weird.
 
 # COMMIT 1
 
